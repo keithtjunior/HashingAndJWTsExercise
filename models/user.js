@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 
 const db = require("../db");
 const ExpressError = require("../expressError");
+const { BCRYPT_WORK_FACTOR } = require("../config");
 
 /** User of the site. */
 
@@ -11,7 +12,8 @@ class User {
 
   /** register new user */
 
-  static async register(username, password, first_name, last_name, phone) {
+  static async register({username, password, first_name, last_name, phone}) {
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
     const results = await db.query(
       `INSERT INTO users (
         username,
@@ -23,7 +25,7 @@ class User {
         last_login_at)
         VALUES ($1, $2, $3, $4, $5, current_timestamp, current_timestamp)
         RETURNING username, password, first_name, last_name, phone`,
-      [username, password, first_name, last_name, phone]);
+      [username, hashedPassword, first_name, last_name, phone]);
     return results.rows[0];
   }
 
@@ -37,7 +39,7 @@ class User {
       [username]);
     const user = results.rows[0];
     if (!user)
-      throw new ExpressError(`Unable to find user with username: ${username}`, 401);
+      throw new ExpressError("Invalid username/password.", 400);
     return await bcrypt.compare(password, user.password) === true;
   }
 
@@ -63,9 +65,7 @@ class User {
           username,
           first_name,
           last_name,
-          phone,
-          join_at,
-          last_login_at
+          phone
         FROM users`);   
     return results.rows;
   }
@@ -134,7 +134,8 @@ class User {
     const results = await db.query(
       `SELECT 
           m.id,
-          m.to_username,
+          m.to_username AS username,
+          f.username AS to_username,
           f.first_name AS to_first_name,
           f.last_name AS to_last_name,
           f.phone AS to_phone,

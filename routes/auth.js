@@ -18,7 +18,7 @@ router.post("/login", async function (req, res, next) {
         const user = await User.authenticate(username, password);
 
         if(!user)
-            throw new ExpressError("Invalid username/password.", 404);
+            throw new ExpressError("Invalid username/password.", 400);
 
         await User.updateLoginTimestamp(username);
         let token = jwt.sign({ username }, SECRET_KEY);
@@ -39,9 +39,7 @@ router.post("/register", async function (req, res, next) {
         if(!first_name||!last_name) throw new ExpressError("First and last name required.", 400);
         if(!phone) throw new ExpressError("Phone number required.", 400);
 
-        const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
-
-        const user = await User.register(username, hashedPassword, first_name, last_name, phone);
+        const user = await User.register({username, password, first_name, last_name, phone});
 
         if (!user) throw new ExpressError("Unable to create user.", 409);
 
