@@ -1,11 +1,10 @@
 const express = require("express");
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const Message = require("../models/message");
 const ExpressError = require("../expressError");
-const { ensureLoggedIn, ensureCorrectUser } = require("../middleware/auth");
-const { SECRET_KEY, BCRYPT_WORK_FACTOR } = require("../config");
+const { ensureLoggedIn } = require("../middleware/auth");
+const { SECRET_KEY } = require("../config");
 
 const router = new express.Router();
 
